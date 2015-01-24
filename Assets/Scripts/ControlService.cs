@@ -24,6 +24,9 @@ public class ControlService : MonoBehaviour {
 
 	private ControlState _state = ControlState.Default;
 
+	private Vector3 _panVelocity = Vector2.zero;
+	private float _zoomVelocity = 0f;
+
 	private void Start () {
 		Injector.Register<ControlService> (this);
 
@@ -51,8 +54,13 @@ public class ControlService : MonoBehaviour {
 		if (_state == ControlState.Pan && _drags.Count == 1) {
 			// Pan
 			PointerEventData t = _drags.ElementAt(0).Value;
+
+			Vector3 currentPos = _mainXform.position;
+
 			_mainXform.Translate(Vector3.up * t.delta.y * panSensitivity * -1f);
 			_mainXform.Translate(Vector3.right * t.delta.x * panSensitivity * -1f);
+			
+			_panVelocity = _mainXform.position - currentPos;
 		} else if (_state == ControlState.Zoom && _drags.Count == 2) {
 			// Zoom
 			PointerEventData t0 = _drags.ElementAt(0).Value;
@@ -68,7 +76,9 @@ public class ControlService : MonoBehaviour {
 			
 			// Find the difference in the distances between each frame.
 			float deltaMagnitudeDiff = prevTouchDeltaMag - touchDeltaMag;
-			
+
+			float currentSize = _main.orthographicSize;
+
 			// ... change the orthographic size based on the change in distance between the touches.
 			_main.orthographicSize += deltaMagnitudeDiff * orthoZoomSpeed;
 
@@ -76,8 +86,19 @@ public class ControlService : MonoBehaviour {
 			_main.orthographicSize = Mathf.Min(_main.orthographicSize, maxSize);
 			_main.orthographicSize = Mathf.Max(_main.orthographicSize, minSize);
 
+			_zoomVelocity = _main.orthographicSize - currentSize;
 		} else { 
 			_state = ControlState.Default;
+
+			if (_panVelocity.x > 0.1f || _panVelocity.y > 0.1f) {
+				_mainXform.Translate(_panVelocity);
+				_panVelocity = _panVelocity * 0.01f;
+			}
+
+			if (_zoomVelocity > 0.1f || _zoomVelocity < -0.1f) {
+				_main.orthographicSize += _zoomVelocity;
+				_zoomVelocity = _zoomVelocity * 0.01f;
+			}
 		}
 	}
 }
