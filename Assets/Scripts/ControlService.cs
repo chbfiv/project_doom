@@ -4,13 +4,16 @@ using UnityEngine.EventSystems;
 
 public class ControlService : MonoBehaviour {
 
-	public void BeginDrag(BaseEventData ed) {
-		PointerEventData pd = ed as PointerEventData;
-		Logger.Log ("BeginDrag:" + Input.touchCount + ":" + pd.pointerId);
+	private void Start () {
+		Injector.Register<ControlService> (this);
 	}
 
-	public void EndDrag(BaseEventData ed) {
-		PointerEventData pd = ed as PointerEventData;
-		Logger.Log ("EndDrag:" + Input.touchCount + ":" + pd.pointerId);
-	}
+	public void BeginDrag(MonoBehaviour sender, PointerEventData e) {
+		Logger.Log ("BeginDrag:" + Input.touchCount + ":" + e.pointerId);
+
+	}	
+
+	public void EndDrag(MonoBehaviour sender, PointerEventData e) {
+		Logger.Log ("EndDrag:" + Input.touchCount + ":" + e.pointerId);
+	}	
 }
