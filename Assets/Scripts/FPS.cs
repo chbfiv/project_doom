@@ -49,12 +49,12 @@ public class FPS : MonoBehaviour {
 			guiText.text = format;
 			
 			if(fps < 30)
-				guiText.material.color = Color.yellow;
+				guiText.color = Color.yellow;
 			else 
 				if(fps < 10)
-					guiText.material.color = Color.red;
+					guiText.color = Color.red;
 			else
-				guiText.material.color = Color.green;
+				guiText.color = Color.green;
 			//	DebugConsole.Log(format,level);
 			timeleft = updateInterval;
 			accum = 0.0F;
