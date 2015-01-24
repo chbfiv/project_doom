@@ -8,12 +8,12 @@ using System.IO;
 public class MazeGeneratorEditor : Editor {
 
 	private MazeGenerator _mazeGenerator;
-	private SerializedProperty RootProperty;
-	private SerializedProperty StartProperty;
+//	private SerializedProperty RootProperty;
+//	private SerializedProperty StartProperty;
 
 	public void OnEnable() {
-		RootProperty = serializedObject.FindProperty("root");
-		StartProperty = serializedObject.FindProperty("start");
+//		RootProperty = serializedObject.FindProperty("root");
+//		StartProperty = serializedObject.FindProperty("start");
 		_mazeGenerator = target as MazeGenerator;
 		
 		if (_mazeGenerator == null)
@@ -27,9 +27,10 @@ public class MazeGeneratorEditor : Editor {
 		
 		EditorGUI.indentLevel = 0;
 		EditorGUILayout.Space();
-		
-		EditorGUILayout.PropertyField(RootProperty);
-		EditorGUILayout.PropertyField(StartProperty);
+
+		base.OnInspectorGUI ();
+//		EditorGUILayout.PropertyField(RootProperty);
+//		EditorGUILayout.PropertyField(StartProperty);
 
 
 		EditorGUILayout.BeginHorizontal();
