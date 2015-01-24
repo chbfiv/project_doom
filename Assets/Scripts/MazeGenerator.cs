@@ -65,29 +65,23 @@ public class MazeGenerator : MonoBehaviour {
 		}
 	}
 
-	private IEnumerator DoStep(Stack<GameRay> stack) { 
-	
-		while (stack.Count > 0) {
-			GameRay ray = stack.Pop();
+	private IEnumerator DoStep(Stack<GameRay> rayStack) { 
+		
+		Stack<GameRay> testRayStack = new Stack<GameRay> ();
 
-	    	CreateCorner (ray);
+		while (rayStack.Count > 0) {
+			GameRay ray = rayStack.Pop();
 
-	   		Queue<Vector3> queue = GetDirectionsQueue();
-			
-			while (queue.Count > 0) {
-				Vector3 dir = queue.Dequeue();
-				RaycastHit info;
-
-				if (!Physics.Raycast (ray.origin, dir, out info, step)) {
-					Debug.DrawRay(ray.origin, dir * step, Color.green, stepDelay * 10f);
-//					Debug.Log("miss: " + origin + ", " + (dir * step));
-					stack.Push(new GameRay(ray.origin + (dir * step), dir));
-					break;
-				} else {
-//					Debug.LogWarning("hit: " + info.collider.name + ", " + origin + ", " + (dir * step));
-					Debug.DrawRay(ray.origin, dir * step, Color.red, stepDelay * 10f);
-				}
+			// double check not already created
+			if (root.transform.FindChild(BuildTileName(ray.origin)) != null) {
+				throw new Exception("PROBLEM!");
 			}
+
+			CreateCorner (ray);
+
+			PushRandomDirections(testRayStack, ray.origin);
+
+			ProcessStacks(rayStack, testRayStack);
 
 			if (Application.isPlaying)
 				yield return new WaitForSeconds(stepDelay);
@@ -97,21 +91,44 @@ public class MazeGenerator : MonoBehaviour {
 		
 		Debug.Log (gameObject.name + " build complete.");
 	}
+
+	private bool ProcessStacks(Stack<GameRay> stack, Stack<GameRay> queue) {
+
+		while (queue.Count > 0) {
+			GameRay testRay = queue.Pop();
+			
+			RaycastHit info;
+			if (!Physics.Raycast (testRay.origin, testRay.dir, out info, step)) {
+				Debug.DrawRay(testRay.origin, testRay.dir * step, Color.green, stepDelay * 10f);
+				//					Debug.Log("miss: " + origin + ", " + (dir * step));
+				stack.Push(new GameRay(testRay.origin + (testRay.dir * step), testRay.dir));
+				return true;
+			} else {
+				//					Debug.LogWarning("hit: " + info.collider.name + ", " + origin + ", " + (dir * step));
+				Debug.DrawRay(testRay.origin, testRay.dir * step, Color.red, stepDelay * 10f);
+			}
+		}
+
+		return false;
+	}
   
+	private static string BuildTileName(Vector3 pos) {
+		return "tile(" + pos.x + "," + pos.y + "," + pos.z + ")";
+	}
+
 	private void CreateCorner(GameRay ray) {
 		if (cornerPrefab == null)
 			throw new InvalidOperationException ("Corner prefab should not be null");
 
 		GameObject obj = GameObject.Instantiate (cornerPrefab);
 		Transform objXform = obj.transform;
+		obj.name = BuildTileName(ray.origin);
 		objXform.position = ray.origin + cornerOffset;
 		objXform.forward = ray.dir * -1f;
 		objXform.parent = root.transform;
 	}
 
-	private Queue<Vector3> GetDirectionsQueue() {
-
-		Queue<Vector3> queue = new Queue<Vector3> ();
+	private void PushRandomDirections(Stack<GameRay> queue, Vector3 origin) {
 
 		List<Vector3> options = new List<Vector3> ();
 		options.Add (Vector3.left);
@@ -123,11 +140,9 @@ public class MazeGenerator : MonoBehaviour {
 
 		for (int i = 0; i < count; i++) {
 			int index = GetRandomDirectionIndex(options);
-			queue.Enqueue(options[index]);
+			queue.Push(new GameRay(origin, options[index]));
 			options.RemoveAt(index);
 		}
-
-		return queue;
 	}
 
 	private int GetRandomDirectionIndex(IList<Vector3> options) {
