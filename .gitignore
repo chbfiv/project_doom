@@ -1,0 +1,14 @@
+bin/
+obj/
+*.suo
+*.csproj.user
+*.userprefs
+*TestResult.xml
+*VisualState.xml
+test-results/
+Library/
+.DS_Store
+.docs/
+Temp/
+*.csproj
+*.sln
