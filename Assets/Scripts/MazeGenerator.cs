@@ -4,6 +4,8 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
+
+
 [ExecuteInEditMode]
 public class MazeGenerator : MonoBehaviour {
 
@@ -44,20 +46,16 @@ public class MazeGenerator : MonoBehaviour {
 		if (root == null)
 			throw new InvalidOperationException ("Root not selected");
 
-		Step (exit.transform.position);
+		Step (new GameRay(exit.transform));
 	}
 
-	private void Update() {
+	private void Step(GameRay ray) {
 
-	}
-
-	private void Step(Vector3 origin) {
-
-		Stack<Vector3> stack = new Stack<Vector3> ();
-		stack.Push (origin);
+		Stack<GameRay> stack = new Stack<GameRay> ();
+		stack.Push (ray);
 
 		if (Application.isPlaying) {
-				StartCoroutine (DoStep (stack));
+			StartCoroutine (DoStep (stack));
 		} else {
 			//HACK: editor doesn't support coroutines
 			IEnumerator e = DoStep (stack);
@@ -67,12 +65,12 @@ public class MazeGenerator : MonoBehaviour {
 		}
 	}
 
-	private IEnumerator DoStep(Stack<Vector3> stack) { 
+	private IEnumerator DoStep(Stack<GameRay> stack) { 
 	
 		while (stack.Count > 0) {
-			Vector3 origin = stack.Pop();
+			GameRay ray = stack.Pop();
 
-	    	CreateCorner (origin + cornerOffset);
+	    	CreateCorner (ray);
 
 	   		Queue<Vector3> queue = GetDirectionsQueue();
 			
@@ -80,13 +78,14 @@ public class MazeGenerator : MonoBehaviour {
 				Vector3 dir = queue.Dequeue();
 				RaycastHit info;
 
-				if (!Physics.Raycast (origin, dir, out info, step)) {
-					Debug.DrawRay(origin, dir * step, Color.green, stepDelay * 10f);
+				if (!Physics.Raycast (ray.origin, dir, out info, step)) {
+					Debug.DrawRay(ray.origin, dir * step, Color.green, stepDelay * 10f);
 //					Debug.Log("miss: " + origin + ", " + (dir * step));
-					stack.Push(origin + (dir * step));
+					stack.Push(new GameRay(ray.origin + (dir * step), dir));
+					break;
 				} else {
 //					Debug.LogWarning("hit: " + info.collider.name + ", " + origin + ", " + (dir * step));
-					Debug.DrawRay(origin, dir * step, Color.red, stepDelay * 10f);
+					Debug.DrawRay(ray.origin, dir * step, Color.red, stepDelay * 10f);
 				}
 			}
 
@@ -99,13 +98,14 @@ public class MazeGenerator : MonoBehaviour {
 		Debug.Log (gameObject.name + " build complete.");
 	}
   
-  	private void CreateCorner(Vector3 pos) {
+	private void CreateCorner(GameRay ray) {
 		if (cornerPrefab == null)
 			throw new InvalidOperationException ("Corner prefab should not be null");
 
 		GameObject obj = GameObject.Instantiate (cornerPrefab);
 		Transform objXform = obj.transform;
-		objXform.position = pos;
+		objXform.position = ray.origin + cornerOffset;
+		objXform.forward = ray.dir * -1f;
 		objXform.parent = root.transform;
 	}
 
