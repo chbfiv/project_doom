@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System;
 using System.IO;
@@ -12,7 +12,11 @@ public class MazeGenerator : MonoBehaviour {
 
 	public float step = 4f;
 	public GameObject cornerPrefab;
+	public Vector3 cornerOffset = Vector3.zero;
 	public GameObject wallPrefab;
+	public Vector3 wallOffset = Vector3.zero;
+	
+	public float stepDelay = 0.01f;
 
 	public void Clean() {
 
@@ -26,7 +30,7 @@ public class MazeGenerator : MonoBehaviour {
 			if (child != null)
 				GameObject.DestroyImmediate(child.gameObject);
 		}
-		
+
 		Debug.Log (gameObject.name + " clean complete.");
 	}
 	
@@ -41,37 +45,61 @@ public class MazeGenerator : MonoBehaviour {
 			throw new InvalidOperationException ("Root not selected");
 
 		Step (exit.transform.position);
-
-		Debug.Log (gameObject.name + " build complete.");
 	}
 
-//	private void Update() {
-//		
-//		Debug.DrawRay(Vector3.zero, Vector3.forward * 1000f, Color.green);
-//	}
+	private void Update() {
+
+	}
 
 	private void Step(Vector3 origin) {
 
-		Queue<Vector3> queue = GetDirectionsQueue ();
+		Stack<Vector3> stack = new Stack<Vector3> ();
+		stack.Push (origin);
 
-		CreateCorner (origin);
+		if (Application.isPlaying) {
+				StartCoroutine (DoStep (stack));
+		} else {
+			//HACK: editor doesn't support coroutines
+			IEnumerator e = DoStep (stack);
+			while(e.MoveNext()) {
 
-		while (queue.Count > 0) {
-			Vector3 dir = queue.Dequeue();
-			
-			RaycastHit info;
-			if (!Physics.Raycast (origin, dir, out info, step)) {
-//				Debug.DrawRay(origin, dir * 1000f, Color.green, 4f);
-//				Debug.LogWarning("miss: " + origin + ", " + dir);
-				Step (origin + (dir * step));
-			} else {
-//				Debug.LogWarning("hit: " + info.collider.name + ", " + origin + ", " + (dir * step));
-//				Debug.DrawRay(origin, dir * 1000f, Color.red, 4f);
 			}
 		}
 	}
 
-	private void CreateCorner(Vector3 pos) {
+	private IEnumerator DoStep(Stack<Vector3> stack) { 
+	
+		while (stack.Count > 0) {
+			Vector3 origin = stack.Pop();
+
+	    	CreateCorner (origin + cornerOffset);
+
+	   		Queue<Vector3> queue = GetDirectionsQueue();
+			
+			while (queue.Count > 0) {
+				Vector3 dir = queue.Dequeue();
+				RaycastHit info;
+
+				if (!Physics.Raycast (origin, dir, out info, step)) {
+					Debug.DrawRay(origin, dir * step, Color.green, stepDelay * 10f);
+//					Debug.Log("miss: " + origin + ", " + (dir * step));
+					stack.Push(origin + (dir * step));
+				} else {
+//					Debug.LogWarning("hit: " + info.collider.name + ", " + origin + ", " + (dir * step));
+					Debug.DrawRay(origin, dir * step, Color.red, stepDelay * 10f);
+				}
+			}
+
+			if (Application.isPlaying)
+				yield return new WaitForSeconds(stepDelay);
+			else
+				yield return null;
+    	}
+		
+		Debug.Log (gameObject.name + " build complete.");
+	}
+  
+  	private void CreateCorner(Vector3 pos) {
 		if (cornerPrefab == null)
 			throw new InvalidOperationException ("Corner prefab should not be null");
 
