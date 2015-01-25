@@ -115,49 +115,64 @@ public class MazeGenerator : MonoBehaviour {
    		while (testRayStack.Count > 0) {
 			GameRay testRay = testRayStack.Pop();
 			
-			string name = BuildTileName ("tile", testRay.origin + (testRay.dir * gameStep));
+			string nameTile = BuildTileName ("tile", testRay.origin + (testRay.dir * gameStep));
+			string nameGame = BuildTileName ("game", testRay.origin + (testRay.dir * gameStep));
 
-			bool has = (mazeXform.FindChild (name) != null) || (gameXform.FindChild (name) != null);
+			bool has = (mazeXform.FindChild (nameTile) != null) || (gameXform.FindChild (nameGame) != null);
 
 			if (!has)
 				rayStack.Push(new GameRay(testRay.origin + (testRay.dir * gameStep), testRay.dir));
 		}
 	}
 
-
-
 	private void CreateGameTile(GameRay ray) {
-		string left = BuildTileName ("tile", ray.origin + (Vector3.left * gameStep));
-		string right = BuildTileName ("tile", ray.origin + (Vector3.right * gameStep));
-		string back = BuildTileName ("tile", ray.origin + (Vector3.back * gameStep));
-		string forward = BuildTileName ("tile", ray.origin + (Vector3.forward * gameStep));
+		//HACKy... =P
+		string leftTile = BuildTileName ("tile", ray.origin + (Vector3.left * gameStep));
+		string rightTile = BuildTileName ("tile", ray.origin + (Vector3.right * gameStep));
+		string backTile = BuildTileName ("tile", ray.origin + (Vector3.back * gameStep));
+		string forwardTile = BuildTileName ("tile", ray.origin + (Vector3.forward * gameStep));
+		
+		string leftGame = BuildTileName ("game", ray.origin + (Vector3.left * gameStep));
+		string rightGame = BuildTileName ("game", ray.origin + (Vector3.right * gameStep));
+		string backGame = BuildTileName ("game", ray.origin + (Vector3.back * gameStep));
+		string forwardGame = BuildTileName ("game", ray.origin + (Vector3.forward * gameStep));
 
 		Transform mazeXform = mazeRoot.transform;
 		Transform gameXform = gameRoot.transform;
-		bool hasLeft = (mazeXform.FindChild (left) != null) || (gameXform.FindChild (left) != null);
-		bool hasRight = (mazeXform.FindChild (right) != null) || (gameXform.FindChild (right) != null);
-		bool hasBack = (mazeXform.FindChild (back) != null) || (gameXform.FindChild (back) != null);
-		bool hasForward = (mazeXform.FindChild (forward) != null) || (gameXform.FindChild (forward) != null);
 
-		bool hasOne = hasLeft || hasRight || hasBack || hasForward;
+		bool hasLeftTile = mazeXform.FindChild (leftTile) != null;
+		bool hasRightTile = mazeXform.FindChild (rightTile) != null;
+		bool hasBackTile = mazeXform.FindChild (backTile) != null;
+		bool hasForwardTile = mazeXform.FindChild (forwardTile) != null;
 
-		bool hasTwo = 	(hasLeft && hasRight) || 
-						(hasLeft && hasForward) ||
-						(hasLeft && hasBack) ||
-						(hasRight && hasForward) || 
-						(hasRight && hasBack) ||
-        				(hasBack && hasForward);
+		bool hasLeftGame = gameXform.FindChild (leftGame) != null;
+		bool hasRightGame = gameXform.FindChild (rightGame) != null;
+		bool hasBackGame = gameXform.FindChild (backGame) != null;
+		bool hasForwardGame = gameXform.FindChild (forwardGame) != null;
+    
+		bool hasLeft = hasLeftTile || hasLeftGame;
+		bool hasRight = hasRightTile || hasRightGame;
+		bool hasBack = hasBackTile || hasBackGame;
+		bool hasForward = hasForwardTile || hasForwardGame;
 
-        bool hasThree = (hasLeft && hasRight && hasBack) || 
-						(hasRight && hasBack && hasForward);
+		int count = 0;
+		count = hasLeft ? count + 1 : count;
+		count = hasRight ? count + 1 : count;
+		count = hasBack ? count + 1 : count;
+		count = hasForward ? count + 1 : count;
 
-		bool hasFour = hasLeft && hasRight && hasBack && hasForward;
-
-		if (hasFour || hasThree || hasTwo) {
-			CreateGameCorner(ray);
+		if (count == 3) {
+			if ((!hasLeft && hasRightGame) || 
+			    (!hasRight && hasLeftGame) ||
+			    (!hasBack && hasForwardGame) ||
+			    (!hasForward && hasBackGame)) {
+				CreateGameWall(ray);
+			} else {
+				CreateGameCorner(ray);
+			}
 		} else {
-			CreateGameWall(ray);
-		}
+			CreateGameCorner(ray);
+    	}
   	}
 
   	private void CreateGameCorner(GameRay ray) {
@@ -166,7 +181,7 @@ public class MazeGenerator : MonoBehaviour {
 		
 		GameObject obj = GameObject.Instantiate (cornerGamePrefab);
 		Transform objXform = obj.transform;
-		obj.name = BuildTileName("tile", ray.origin);
+		obj.name = BuildTileName("game", ray.origin);
 		objXform.position = ray.origin + cornerOffset;
 		objXform.forward = ray.dir;
 		objXform.parent = gameRoot.transform;
@@ -178,7 +193,7 @@ public class MazeGenerator : MonoBehaviour {
 		
 		GameObject obj = GameObject.Instantiate (wallGamePrefab);
 		Transform objXform = obj.transform;
-		obj.name = BuildTileName("tile", ray.origin);
+		obj.name = BuildTileName("game", ray.origin);
 		objXform.position = ray.origin + cornerOffset;
 		objXform.forward = ray.dir;
 		objXform.parent = gameRoot.transform;
