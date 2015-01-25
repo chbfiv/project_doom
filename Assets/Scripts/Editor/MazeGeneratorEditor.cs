@@ -34,20 +34,12 @@ public class MazeGeneratorEditor : Editor {
 
 		EditorGUILayout.BeginHorizontal();
 		
-		if (GUILayout.Button("Clean Layout", GUILayout.ExpandWidth(false))) {
-			_mazeGenerator.CleanLayout();
-		}
-		
-		if (GUILayout.Button("Build Layout", GUILayout.ExpandWidth(false))) {
-			_mazeGenerator.BuildLayout();
-		}
-		
-		EditorGUILayout.EndHorizontal();
-
-		EditorGUILayout.BeginHorizontal();
-
 		if (GUILayout.Button("Clean Maze", GUILayout.ExpandWidth(false))) {
 			_mazeGenerator.CleanMaze();
+    	}
+
+		if (GUILayout.Button("Build Layout", GUILayout.ExpandWidth(false))) {
+			_mazeGenerator.BuildLayout();
 		}
 
 		if (GUILayout.Button("Build Maze", GUILayout.ExpandWidth(false))) {
@@ -56,7 +48,19 @@ public class MazeGeneratorEditor : Editor {
 
 		EditorGUILayout.EndHorizontal();
 
-		// Apply changes to the serializedProperty - always do this in the end of OnInspectorGUI.
+		EditorGUILayout.BeginHorizontal();
+		
+		if (GUILayout.Button("Clean Game", GUILayout.ExpandWidth(false))) {
+			_mazeGenerator.CleanGame();
+		}
+		
+		if (GUILayout.Button("Build Game", GUILayout.ExpandWidth(false))) {
+			_mazeGenerator.BuildGame();
+		}
+		
+		EditorGUILayout.EndHorizontal();
+
+    // Apply changes to the serializedProperty - always do this in the end of OnInspectorGUI.
 		serializedObject.ApplyModifiedProperties();
 	}
 }
