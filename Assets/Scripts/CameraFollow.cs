@@ -12,11 +12,14 @@ public class CameraFollow : MonoBehaviour
 	public Vector3 minXAndZ;		// The minimum x and y coordinates the camera can have.
 	public Vector3 playerOffset;
 
+	private Transform xform;
 	private Transform player;		// Reference to the player's transform.
 
 
-	void Awake ()
-	{
+	void Awake () {
+		xform = transform;
+		target = new Vector3(xform.position.x, 0, xform.position.z);
+
 		GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
 
 		if (players.Length > 1)
@@ -48,28 +51,37 @@ public class CameraFollow : MonoBehaviour
 		TrackPlayer();
 	}
 	
-	
-	void TrackPlayer ()
-	{
+	private Vector3 lastPlayerPos = Vector3.zero;
+	private Vector3 target = Vector3.zero;
+
+	void TrackPlayer () {
+
+		Vector3 currentPlayerPos = player.position;
+		Vector3 playerVel = (currentPlayerPos - lastPlayerPos);
+
 		// By default the target x and y coordinates of the camera are it's current x and y coordinates.
-		float targetX = transform.position.x;
-		float targetZ = transform.position.z;
+		float targetX = xform.position.x;
+		float targetZ = xform.position.z;
 
 		// If the player has moved beyond the x margin...
-		if(CheckXMargin())
+		if (CheckXMargin ())
 			// ... the target x coordinate should be a Lerp between the camera's current x position and the player's current x position.
-			targetX = Mathf.Lerp(transform.position.x, player.position.x + playerOffset.x, xSmooth * Time.deltaTime);
+//			targetX = Mathf.Lerp(xform.position.x, player.position.x + playerOffset.x, xSmooth * Time.fixedDeltaTime);
+			targetX = xform.position.x + playerVel.x;
 
 		// If the player has moved beyond the y margin...
 		if(CheckYMargin())
 			// ... the target y coordinate should be a Lerp between the camera's current y position and the player's current y position.
-			targetZ = Mathf.Lerp(transform.position.z, player.position.z + playerOffset.z, zSmooth * Time.deltaTime);
+//			targetZ = Mathf.Lerp(xform.position.z, player.position.z + playerOffset.z, zSmooth * Time.fixedDeltaTime);
+			targetZ = xform.position.z + playerVel.z;
 
 		// The target x and y coordinates should not be larger than the maximum or smaller than the minimum.
 		targetX = Mathf.Clamp(targetX, minXAndZ.x, maxXAndZ.x);
 		targetZ = Mathf.Clamp(targetZ, minXAndZ.z, maxXAndZ.z);
 
 		// Set the camera's position to the target position with the same z component.
-		transform.position = new Vector3(targetX, transform.position.y, targetZ);
+		xform.position = new Vector3(targetX, xform.position.y, targetZ);
+
+		lastPlayerPos = player.position;
 	}
 }
