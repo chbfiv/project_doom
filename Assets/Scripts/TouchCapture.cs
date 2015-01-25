@@ -19,4 +19,9 @@ public class TouchCapture : MonoBehaviour {
 		PointerEventData pd = ed as PointerEventData;
 		_ctrlService.EndDrag (this, pd);
 	}
+
+	public void PointerClick(BaseEventData ed) {
+		PointerEventData pd = ed as PointerEventData;
+		_ctrlService.PointerClick (this, pd);
+	}
 }

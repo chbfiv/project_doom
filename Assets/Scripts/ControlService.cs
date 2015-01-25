@@ -3,11 +3,17 @@ using System.Collections;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 public enum ControlState {
 	Default = 0,
 	Pan = 1,
 	Zoom = 2
+}
+
+public enum PlayerState {
+	Rest = 0,
+	Explore = 1
 }
 
 public class ControlService : MonoBehaviour {
@@ -20,12 +26,17 @@ public class ControlService : MonoBehaviour {
 	public float panSensitivity = 0.05f;   
 	public float orthoZoomSpeed = 0.25f;
 	
-	public Dictionary<int, PointerEventData> _drags = new Dictionary<int, PointerEventData>();
+	private Dictionary<int, PointerEventData> _drags = new Dictionary<int, PointerEventData>();
 
-	private ControlState _state = ControlState.Default;
+	private ControlState _ctrlState = ControlState.Default;
+	private PlayerState _playerState = PlayerState.Rest;
 
 	private Vector3 _panVelocity = Vector2.zero;
 	private float _zoomVelocity = 0f;
+
+	public Vector3 targetToExplore = Vector3.zero;
+
+	public event Action PlayerStateChanged;
 
 	private void Start () {
 		Injector.Register<ControlService> (this);
@@ -33,14 +44,36 @@ public class ControlService : MonoBehaviour {
 		_mainXform = _main.transform;
 	}
 
+	public PlayerState playerState {
+		get { return _playerState; }
+		set {
+			_playerState = value;
+			Action temp = PlayerStateChanged;
+			if (temp != null)
+				temp();
+		}
+	}
+  
+  	public ControlState ctrlState {
+		get { return _ctrlState; }
+	}
+
+  	public IDictionary<int, PointerEventData> drags {
+		get { return _drags; }
+	}
+
+	public void PointerClick(MonoBehaviour sender, PointerEventData e) {
+		ProcessPlayerClick (e.position);
+	}
+
 	public void BeginDrag(MonoBehaviour sender, PointerEventData e) {
 //		Logger.Log ("BeginDrag:" + Input.touchCount + ":" + e.pointerId);
 		_drags [e.pointerId] = e;
 
-		if (_state == ControlState.Default && _drags.Count == 1) {
-			_state = ControlState.Pan;
+		if (_ctrlState == ControlState.Default && _drags.Count == 1) {
+			_ctrlState = ControlState.Pan;
 		} else if (_drags.Count == 2) { 
-			_state = ControlState.Zoom;
+			_ctrlState = ControlState.Zoom;
 		}
 	}	
 
@@ -50,8 +83,39 @@ public class ControlService : MonoBehaviour {
 			_drags.Remove (e.pointerId);
 	}	
 
+	private void ProcessPlayerClick(Vector2 pos) {
+		
+		if (_ctrlState == ControlState.Default || playerState == PlayerState.Explore) {
+			
+			Vector3 worldPos = _main.ScreenToWorldPoint(new Vector3(pos.x, pos.y, _main.nearClipPlane));
+			
+			RaycastHit rayHit;
+			//HACK: bug?
+			//			if (Physics.Raycast(worldPos, _main.transform.forward, out rayHit, 400f, LayerMask.NameToLayer("Enemies"))) {
+			if (Physics.Raycast(worldPos, _main.transform.forward, out rayHit, 400f)) {
+				
+				//				Debug.DrawRay(worldPos, _main.transform.forward * 400f, Color.green, 2f);
+				if (rayHit.collider != null) {
+					Logger.Log("hit:" + rayHit.collider.name + " " + rayHit.collider.tag);
+					targetToExplore = rayHit.point;
+					playerState = PlayerState.Explore;
+				}
+			} 
+			
+			//			else {
+			//				Debug.DrawRay(pos, _main.transform.forward * 400f, Color.red, 2f);
+			//			}
+			
+		}
+	}
+
 	private void Update() {
-		if (_state == ControlState.Pan && _drags.Count == 1) {
+#if UNITY_EDITOR
+		if (Input.GetMouseButton(0)) {
+			ProcessPlayerClick(Input.mousePosition);
+		}
+#endif
+		if (_ctrlState == ControlState.Pan && _drags.Count == 1) {
 			// Pan
 			PointerEventData t = _drags.ElementAt(0).Value;
 
@@ -61,7 +125,7 @@ public class ControlService : MonoBehaviour {
 			_mainXform.Translate(Vector3.right * t.delta.x * panSensitivity * -1f);
 			
 			_panVelocity = _mainXform.position - currentPos;
-		} else if (_state == ControlState.Zoom && _drags.Count == 2) {
+		} else if (_ctrlState == ControlState.Zoom && _drags.Count == 2) {
 			// Zoom
 			PointerEventData t0 = _drags.ElementAt(0).Value;
 			PointerEventData t1 = _drags.ElementAt(1).Value;
@@ -88,7 +152,7 @@ public class ControlService : MonoBehaviour {
 
 			_zoomVelocity = _main.orthographicSize - currentSize;
 		} else { 
-			_state = ControlState.Default;
+			_ctrlState = ControlState.Default;
 
 			if (_panVelocity.x > 0.1f || _panVelocity.y > 0.1f) {
 				_mainXform.Translate(_panVelocity);

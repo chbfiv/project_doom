@@ -70,7 +70,7 @@ public class Seeker : MonoBehaviour {
 	
 	/** The current path */
 	[System.NonSerialized]
-	protected Path path;
+	public Path path;
 
 	/** Previous path. Used to draw gizmos */
 	private Path prevPath;

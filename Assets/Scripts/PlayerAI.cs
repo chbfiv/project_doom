@@ -9,9 +9,6 @@ public class PlayerAI : MonoBehaviour {
 	private Seeker seeker;
 	private CharacterController controller;
 	
-	//The calculated path
-	public Path path;
-	
 	//The AI's speed per second
 	public float speed = 100;
 	
@@ -23,27 +20,63 @@ public class PlayerAI : MonoBehaviour {
 
 	private ControlService _ctrlService;
 
+	private Path path {
+		get { return seeker.GetCurrentPath (); }
+	}
+
 	// Use this for initialization
 	void Start () {
 		_ctrlService = Injector.Get<ControlService> ();
+		_ctrlService.PlayerStateChanged += HandlePlayerStateChanged;
 		seeker = GetComponent<Seeker> ();
 		controller = GetComponent<CharacterController> ();
-		seeker.StartPath (transform.position, target.position, OnPathCompelte);
+
+		seeker.pathCallback += OnPathCompelte;
+	}
+
+	private void HandlePlayerStateChanged ()
+	{
+		if (_ctrlService.playerState == PlayerState.Explore) {
+			ResetPath();
+
+			if (path != null && !path.IsDone()) 
+				seeker.StartPath (transform.position, _ctrlService.targetToExplore);
+			else
+				seeker.StartPath (transform.position, _ctrlService.targetToExplore);
+		}
+	}
+
+	private void ResetPath() {
+		currentWaypoint = 0;
+
+		Path p = seeker.path;
+		if (p != null) {
+			p.Claim (this);
+			seeker.path = null;
+			p.Release(this);
+		}
+	}
+
+	void OnDestroy() {
+		seeker.pathCallback -= OnPathCompelte;
+		_ctrlService.PlayerStateChanged -= HandlePlayerStateChanged;
 	}
 	
 	private void OnPathCompelte(Path p) {
 
 		if (!p.error) {
-			path = p;
-			//Reset the waypoint counter
-			currentWaypoint = 0;
-			Debug.Log ("Path found.");
+			Debug.Log ("new path found.");
 		} else {
 			Debug.LogError("Failed to locate path.");
 		}
 	}
 
 	private void FixedUpdate() {
+
+		if (_ctrlService.playerState != PlayerState.Explore) {
+			return;
+		}
+
 		if (path == null) {
 			//We have no path to move after yet
 			return;
@@ -51,6 +84,8 @@ public class PlayerAI : MonoBehaviour {
 		
 		if (currentWaypoint >= path.vectorPath.Count) {
 			Debug.Log ("End Of Path Reached");
+			ResetPath();
+			_ctrlService.playerState = PlayerState.Rest;
 			return;
 		}
 		
@@ -63,7 +98,7 @@ public class PlayerAI : MonoBehaviour {
 
 		//Check if we are close enough to the next waypoint
 		//If we are, proceed to follow the next waypoint
-		if (Vector3.Distance (transform.position,path.vectorPath[currentWaypoint]) < nextWaypointDistance) {
+		if (Vector3.Distance (transform.position, path.vectorPath[currentWaypoint]) < nextWaypointDistance) {
 			currentWaypoint++;
 			return;
 		}
