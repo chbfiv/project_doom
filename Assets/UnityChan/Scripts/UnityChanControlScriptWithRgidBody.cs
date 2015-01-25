@@ -9,7 +9,7 @@ using System.Collections;
 // 必要なコンポーネントの列記
 [RequireComponent(typeof (Animator))]
 [RequireComponent(typeof (CapsuleCollider))]
-[RequireComponent(typeof (Rigidbody))]
+//[RequireComponent(typeof (Rigidbody))]
 
 public class UnityChanControlScriptWithRgidBody : MonoBehaviour
 {
@@ -56,7 +56,7 @@ public class UnityChanControlScriptWithRgidBody : MonoBehaviour
 		anim = GetComponent<Animator>();
 		// CapsuleColliderコンポーネントを取得する（カプセル型コリジョン）
 		col = GetComponent<CapsuleCollider>();
-		rb = GetComponent<Rigidbody>();
+//		rb = GetComponent<Rigidbody>();
 		//メインカメラを取得する
 		cameraObject = GameObject.FindWithTag("MainCamera");
 		// CapsuleColliderコンポーネントのHeight、Centerの初期値を保存する
@@ -74,8 +74,8 @@ public class UnityChanControlScriptWithRgidBody : MonoBehaviour
 		anim.SetFloat("Direction", h); 						// Animator側で設定している"Direction"パラメタにhを渡す
 		anim.speed = animSpeed;								// Animatorのモーション再生速度に animSpeedを設定する
 		currentBaseState = anim.GetCurrentAnimatorStateInfo(0);	// 参照用のステート変数にBase Layer (0)の現在のステートを設定する
-		rb.useGravity = true;//ジャンプ中に重力を切るので、それ以外は重力の影響を受けるようにする
-		
+//		rb.useGravity = false;//ジャンプ中に重力を切るので、それ以外は重力の影響を受けるようにする
+
 		
 		
 		// 以下、キャラクターの移動処理
@@ -96,7 +96,7 @@ public class UnityChanControlScriptWithRgidBody : MonoBehaviour
 				//ステート遷移中でなかったらジャンプできる
 				if(!anim.IsInTransition(0))
 				{
-						rb.AddForce(Vector3.up * jumpPower, ForceMode.VelocityChange);
+//						rb.AddForce(Vector3.up * jumpPower, ForceMode.VelocityChange);
 						anim.SetBool("Jump", true);		// Animatorにジャンプに切り替えるフラグを送る
 				}
 			}
@@ -135,8 +135,8 @@ public class UnityChanControlScriptWithRgidBody : MonoBehaviour
 					// GravityControl:1⇒ジャンプ中（重力無効）、0⇒重力有効
 					float jumpHeight = anim.GetFloat("JumpHeight");
 					float gravityControl = anim.GetFloat("GravityControl"); 
-					if(gravityControl > 0)
-						rb.useGravity = false;	//ジャンプ中の重力の影響を切る
+//					if(gravityControl > 0)
+//						rb.useGravity = false;	//ジャンプ中の重力の影響を切る
 										
 					// レイキャストをキャラクターのセンターから落とす
 					Ray ray = new Ray(transform.position + Vector3.up, -Vector3.up);
