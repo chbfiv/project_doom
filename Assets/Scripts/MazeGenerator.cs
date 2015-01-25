@@ -373,15 +373,35 @@ public class MazeGenerator : MonoBehaviour {
 	}
 
 	private void CreateCorner(GameRay ray) {
-		if (cornerPrefab == null)
-			throw new InvalidOperationException ("Corner prefab should not be null");
+		{
+			if (cornerPrefab == null)
+					throw new InvalidOperationException ("Corner prefab should not be null");
 
-		GameObject obj = GameObject.Instantiate (cornerPrefab);
-		Transform objXform = obj.transform;
-		obj.name = BuildTileName("tile", ray.origin);
-		objXform.position = ray.origin + cornerOffset;
-		objXform.forward = ray.dir * -1f;
-		objXform.parent = mazeRoot.transform;
+			GameObject obj = GameObject.Instantiate (cornerPrefab);
+			Transform objXform = obj.transform;
+
+			Vector3 origin = ray.origin;
+
+			obj.name = BuildTileName ("tile", origin);
+			objXform.position = origin;
+			objXform.forward = ray.dir;
+			objXform.parent = mazeRoot.transform;
+		}
+
+		{
+			if (wallPrefab == null)
+				throw new InvalidOperationException ("Wall prefab should not be null");
+		
+			GameObject obj = GameObject.Instantiate (wallPrefab);
+			Transform objXform = obj.transform;
+			
+			Vector3 origin = ray.origin + (ray.dir * -1f * gameStep);
+
+			obj.name = BuildTileName("tile", origin);
+			objXform.position = origin;
+			objXform.forward = ray.dir;
+			objXform.parent = mazeRoot.transform;
+		}
 	}
 
 	private void PushRandomDirections(Stack<GameRay> queue, Vector3 origin) {
