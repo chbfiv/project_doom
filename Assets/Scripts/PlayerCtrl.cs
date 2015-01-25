@@ -40,9 +40,11 @@ public class PlayerCtrl : MonoBehaviour {
 	static int restState = Animator.StringToHash("Base Layer.Rest");
 
 	private CharacterController controller;
-
-	public float speed = 0f;
-	public float direction = 0f;
+	
+	private Vector3 lastPos = Vector3.zero;
+	public float minAnimSpeed = 0.1f;
+	public float maxAnimSpeed = 6f;
+	public float speedRatio = 0.01f;
 
 	// Use this for initialization
 	void Start () {
@@ -53,19 +55,27 @@ public class PlayerCtrl : MonoBehaviour {
 		anim = GetComponent<Animator>();
 		// CapsuleColliderコンポーネントを取得する（カプセル型コリジョン）
 //		col = GetComponent<CapsuleCollider>();
-		//		rb = GetComponent<Rigidbody>();
+//				rb = GetComponent<Rigidbody>();
 		//メインカメラを取得する
 		cameraObject = GameObject.FindWithTag("MainCamera");
 		// CapsuleColliderコンポーネントのHeight、Centerの初期値を保存する
 		orgColHight = controller.height;
 		orgVectColCenter = controller.center;
 	}
-	
+
 	// Update is called once per frame
 	private void FixedUpdate () {
 
+		Vector3 currentPos = transform.position;
+		float speed = (currentPos - lastPos).magnitude / Time.deltaTime;
+
+		speed = speed * speedRatio;
+
+		speed = Mathf.Max (speed, minAnimSpeed);
+		speed = Mathf.Min (speed, maxAnimSpeed);
+
 		anim.SetFloat("Speed", speed);							// Animator側で設定している"Speed"パラメタにvを渡す
-		anim.SetFloat("Direction", direction); 						// Animator側で設定している"Direction"パラメタにhを渡す
+//		anim.SetFloat("Direction", direction); 						// Animator側で設定している"Direction"パラメタにhを渡す
 		anim.speed = animSpeed;								// Animatorのモーション再生速度に animSpeedを設定する
 		currentBaseState = anim.GetCurrentAnimatorStateInfo(0);	// 参照用のステート変数にBase Layer (0)の現在のステートを設定する
 		//		rb.useGravity = false;//ジャンプ中に重力を切るので、それ以外は重力の影響を受けるようにする
@@ -178,6 +188,8 @@ public class PlayerCtrl : MonoBehaviour {
 				anim.SetBool("Rest", false);
 			}
 		}
+
+		lastPos = currentPos;
 	}
 
 	// キャラクターのコライダーサイズのリセット関数

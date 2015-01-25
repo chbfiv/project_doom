@@ -56,6 +56,8 @@ public class PlayerAI : MonoBehaviour {
 		dir *= speed * Time.fixedDeltaTime;
 		controller.SimpleMove (dir);
 		
+		transform.rotation = Quaternion.LookRotation (dir);
+
 		//Check if we are close enough to the next waypoint
 		//If we are, proceed to follow the next waypoint
 		if (Vector3.Distance (transform.position,path.vectorPath[currentWaypoint]) < nextWaypointDistance) {
