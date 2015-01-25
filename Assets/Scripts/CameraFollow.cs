@@ -18,7 +18,6 @@ public class CameraFollow : MonoBehaviour
 
 	void Awake () {
 		xform = transform;
-		target = new Vector3(xform.position.x, 0, xform.position.z);
 
 		GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
 
@@ -31,18 +30,28 @@ public class CameraFollow : MonoBehaviour
 //		transform.position = new Vector3(player.x, transform.position.y, player.z)
 	}
 
-
+	float GetXMargin()
+	{
+		// Returns true if the distance between the camera and the player in the x axis is greater than the x margin.
+		return Mathf.Abs(transform.position.x - currentPlayerPos.x);
+  	}
+  
 	bool CheckXMargin()
 	{
 		// Returns true if the distance between the camera and the player in the x axis is greater than the x margin.
-		return Mathf.Abs(transform.position.x - (player.position.x + playerOffset.x)) > xMargin;
+		return GetXMargin() > xMargin;
 	}
 
-
-	bool CheckYMargin()
+	float GetZMargin()
 	{
 		// Returns true if the distance between the camera and the player in the y axis is greater than the y margin.
-		return Mathf.Abs(transform.position.z - (player.position.z + playerOffset.z)) > zMargin;
+		return Mathf.Abs(transform.position.z - currentPlayerPos.z);
+ 	 }
+
+  	bool CheckZMargin()
+	{
+		// Returns true if the distance between the camera and the player in the y axis is greater than the y margin.
+		return GetZMargin() > zMargin;
 	}
 
 
@@ -52,11 +61,15 @@ public class CameraFollow : MonoBehaviour
 	}
 	
 	private Vector3 lastPlayerPos = Vector3.zero;
-	private Vector3 target = Vector3.zero;
+
+	private Vector3 currentPlayerPos {
+		get {
+			return player.position + playerOffset;
+		}
+	}
 
 	void TrackPlayer () {
 
-		Vector3 currentPlayerPos = player.position;
 		Vector3 playerVel = (currentPlayerPos - lastPlayerPos);
 
 		// By default the target x and y coordinates of the camera are it's current x and y coordinates.
@@ -64,16 +77,23 @@ public class CameraFollow : MonoBehaviour
 		float targetZ = xform.position.z;
 
 		// If the player has moved beyond the x margin...
-		if (CheckXMargin ())
+		if (CheckXMargin ()) {
+			float localXMargin = GetXMargin();
 			// ... the target x coordinate should be a Lerp between the camera's current x position and the player's current x position.
 //			targetX = Mathf.Lerp(xform.position.x, player.position.x + playerOffset.x, xSmooth * Time.fixedDeltaTime);
+//			targetX = Mathf.Lerp(xform.position.x + playerVel.x, xform.position.x + xMargin - localXMargin, localXMargin / (xMargin*4f));
+
 			targetX = xform.position.x + playerVel.x;
+		}
 
 		// If the player has moved beyond the y margin...
-		if(CheckYMargin())
+		if(CheckZMargin()) {
+			float localZMargin = GetZMargin();
 			// ... the target y coordinate should be a Lerp between the camera's current y position and the player's current y position.
 //			targetZ = Mathf.Lerp(xform.position.z, player.position.z + playerOffset.z, zSmooth * Time.fixedDeltaTime);
+//			targetZ = Mathf.Lerp(xform.position.z + playerVel.z, xform.position.z + zMargin - localZMargin, localZMargin / (zMargin*4f));
 			targetZ = xform.position.z + playerVel.z;
+		}
 
 		// The target x and y coordinates should not be larger than the maximum or smaller than the minimum.
 		targetX = Mathf.Clamp(targetX, minXAndZ.x, maxXAndZ.x);
@@ -82,6 +102,6 @@ public class CameraFollow : MonoBehaviour
 		// Set the camera's position to the target position with the same z component.
 		xform.position = new Vector3(targetX, xform.position.y, targetZ);
 
-		lastPlayerPos = player.position;
+		lastPlayerPos = currentPlayerPos;
 	}
 }
