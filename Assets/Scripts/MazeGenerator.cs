@@ -9,7 +9,7 @@ using System.Collections.Generic;
 [ExecuteInEditMode]
 public class MazeGenerator : MonoBehaviour {
 
-	public GameObject root;
+	public GameObject mazeRoot;
 	public GameObject exit;
 
 	public float step = 4f;
@@ -18,14 +18,20 @@ public class MazeGenerator : MonoBehaviour {
 	public GameObject wallPrefab;
 	public Vector3 wallOffset = Vector3.zero;
 	
+	public GameObject cornerLayoutPrefab;
+	public GameObject wallLayoutPrefab;
+
 	public float stepDelay = 0.01f;
+	
+	public GameObject layoutRoot;
+	public GameObject layoutPivotsParent;
 
-	public void Clean() {
+	public void CleanLayout() {
 
-		if (root == null)
-			throw new InvalidOperationException ("Root not selected");
+		if (layoutRoot == null)
+			throw new InvalidOperationException ("laytout root not selected");
 
-		Transform rootXform = root.transform;
+		Transform rootXform = layoutRoot.transform;
 
 		for (int i = rootXform.childCount - 1; i >= 0; i--) {
 			Transform child = rootXform.GetChild(i);	
@@ -33,17 +39,118 @@ public class MazeGenerator : MonoBehaviour {
 				GameObject.DestroyImmediate(child.gameObject);
 		}
 
-		Debug.Log (gameObject.name + " clean complete.");
+		Debug.Log (gameObject.name + " layout clean complete.");
+	}
+
+	public void BuildLayout() {
+
+		CleanLayout ();
+		
+		if (layoutPivotsParent == null)
+			throw new InvalidOperationException ("layout pivots should not be null");
+
+		Transform parentXform = layoutPivotsParent.transform;
+
+		if (parentXform.childCount <= 1)
+			throw new InvalidOperationException ("layout pivots should be > 1");
+		
+		Transform previousXform;
+		Transform currentXform = parentXform.GetChild (0);
+
+		// make first corner
+		CreateLayoutCorner (currentXform.position);
+
+		for (int i=1; i < parentXform.childCount; i++) {
+			previousXform = parentXform.GetChild(i-1);
+			currentXform = parentXform.GetChild(i);
+
+			CreateLayoutCorner(currentXform.position);
+
+			ConnectLayoutCorners(previousXform.position, currentXform.position);
+		}
+
+		// one more time
+		previousXform = currentXform;
+		currentXform = parentXform.GetChild (0);
+
+		ConnectLayoutCorners(currentXform.position, previousXform.position);
+
+		Debug.Log (gameObject.name + " build layout complete.");
+	}
+
+	private void CreateLayoutCorner(Vector3 pos) {
+		if (cornerLayoutPrefab == null)
+			throw new InvalidOperationException ("Corner layout prefab should not be null");
+		
+		GameObject obj = GameObject.Instantiate (cornerLayoutPrefab);
+		Transform objXform = obj.transform;
+		obj.name = BuildTileName("corner_layout", pos);
+		objXform.position = pos;
+//		objXform.forward = ray.dir * -1f;
+		objXform.parent = layoutRoot.transform;
+	}
+
+	private void CreateLayoutWall(Vector3 pos, Vector3 dir) {
+		if (wallLayoutPrefab == null)
+			throw new InvalidOperationException ("Wall layout prefab should not be null");
+		
+		GameObject obj = GameObject.Instantiate (wallLayoutPrefab);
+		Transform objXform = obj.transform;
+		obj.name = BuildTileName("wall_layout",pos);
+		objXform.position = pos;
+		objXform.forward = dir;
+		objXform.parent = layoutRoot.transform;
+	}
+
+	private void ConnectLayoutCorners(Vector3 startPos, Vector3 endPos) {
+		float distance = Vector3.Distance (startPos, endPos);
+		int indexDist = Mathf.RoundToInt (distance);
+		int stepDist = Mathf.RoundToInt (step);
+
+		if (indexDist < stepDist)
+			throw new InvalidOperationException ("min distance is " + stepDist);
+
+		if ((indexDist % step) != 0)
+			throw new InvalidOperationException ("distance should be a multiple of " + stepDist + "; " + indexDist);
+
+		Vector3 dir = (endPos - startPos).normalized;
+
+		//HACK: offset 2
+		for (int i = 0; i < indexDist; i+= stepDist) {
+			int wallOffset = i + 2;
+			int cornerOffset = i + 4;
+			CreateLayoutWall(startPos + (dir * wallOffset), dir);
+
+			if (cornerOffset < indexDist) {
+				CreateLayoutCorner(startPos + (dir * cornerOffset));
+			}
+		}
+	}	
+
+	public void CleanMaze() {
+		
+		if (mazeRoot == null)
+			throw new InvalidOperationException ("maze root not selected");
+		
+		Transform rootXform = mazeRoot.transform;
+		
+		for (int i = rootXform.childCount - 1; i >= 0; i--) {
+			Transform child = rootXform.GetChild(i);	
+			if (child != null)
+				GameObject.DestroyImmediate(child.gameObject);
+		}
+		
+		Debug.Log (gameObject.name + " maze clean complete.");
 	}
 	
-	public void Build() {
+	public void BuildMaze() {
 
-		Clean ();
+		CleanMaze ();
 
 		if (exit == null)
 			throw new InvalidOperationException ("Exit not selected");
 
-		if (root == null)
+		if (mazeRoot == null)
 			throw new InvalidOperationException ("Root not selected");
 
 		Step (new GameRay(exit.transform));
@@ -73,7 +180,7 @@ public class MazeGenerator : MonoBehaviour {
 			GameRay ray = rayStack.Pop();
 
 			// double check not already created
-			if (root.transform.FindChild(BuildTileName(ray.origin)) != null) {
+			if (mazeRoot.transform.FindChild(BuildTileName("tile",ray.origin)) != null) {
 				throw new Exception("PROBLEM!");
 			}
 
@@ -89,7 +196,7 @@ public class MazeGenerator : MonoBehaviour {
 				yield return null;
     	}
 		
-		Debug.Log (gameObject.name + " build complete.");
+		Debug.Log (gameObject.name + " build maze complete.");
 	}
 
 	private bool ProcessStacks(Stack<GameRay> stack, Stack<GameRay> queue) {
@@ -112,8 +219,8 @@ public class MazeGenerator : MonoBehaviour {
 		return false;
 	}
   
-	private static string BuildTileName(Vector3 pos) {
-		return "tile(" + pos.x + "," + pos.y + "," + pos.z + ")";
+	private static string BuildTileName(string tag, Vector3 pos) {
+		return tag + "(" + pos.x + "," + pos.y + "," + pos.z + ")";
 	}
 
 	private void CreateCorner(GameRay ray) {
@@ -122,10 +229,10 @@ public class MazeGenerator : MonoBehaviour {
 
 		GameObject obj = GameObject.Instantiate (cornerPrefab);
 		Transform objXform = obj.transform;
-		obj.name = BuildTileName(ray.origin);
+		obj.name = BuildTileName("tile", ray.origin);
 		objXform.position = ray.origin + cornerOffset;
 		objXform.forward = ray.dir * -1f;
-		objXform.parent = root.transform;
+		objXform.parent = mazeRoot.transform;
 	}
 
 	private void PushRandomDirections(Stack<GameRay> queue, Vector3 origin) {

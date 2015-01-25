@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using UnityEditor;
 using System;
@@ -29,13 +29,13 @@ public class MazeGeneratorWindow : EditorWindow {
 
 	private void CleanAll() {
 		foreach(MazeGenerator mazeGenerator in GameObject.FindObjectsOfType<MazeGenerator> ()) {
-			mazeGenerator.Clean();
+			mazeGenerator.CleanMaze();
 		}
 	}
 
 	private void BuildAll() {
 		foreach(MazeGenerator mazeGenerator in GameObject.FindObjectsOfType<MazeGenerator> ()) {
-			mazeGenerator.Build();
+			mazeGenerator.BuildMaze();
 		}
 	}
 }

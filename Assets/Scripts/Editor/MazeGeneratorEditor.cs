@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using UnityEditor;
 using System;
@@ -32,15 +32,26 @@ public class MazeGeneratorEditor : Editor {
 //		EditorGUILayout.PropertyField(RootProperty);
 //		EditorGUILayout.PropertyField(StartProperty);
 
+		EditorGUILayout.BeginHorizontal();
+		
+		if (GUILayout.Button("Clean Layout", GUILayout.ExpandWidth(false))) {
+			_mazeGenerator.CleanLayout();
+		}
+		
+		if (GUILayout.Button("Build Layout", GUILayout.ExpandWidth(false))) {
+			_mazeGenerator.BuildLayout();
+		}
+		
+		EditorGUILayout.EndHorizontal();
 
 		EditorGUILayout.BeginHorizontal();
 
-		if (GUILayout.Button("Clean", GUILayout.ExpandWidth(false))) {
-			_mazeGenerator.Clean();
+		if (GUILayout.Button("Clean Maze", GUILayout.ExpandWidth(false))) {
+			_mazeGenerator.CleanMaze();
 		}
 
-		if (GUILayout.Button("Build", GUILayout.ExpandWidth(false))) {
-			_mazeGenerator.Build();
+		if (GUILayout.Button("Build Maze", GUILayout.ExpandWidth(false))) {
+			_mazeGenerator.BuildMaze();
 		}
 
 		EditorGUILayout.EndHorizontal();
