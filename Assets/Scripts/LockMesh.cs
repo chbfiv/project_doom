@@ -6,6 +6,6 @@ public class LockMesh : MonoBehaviour {
 
 	// Use this for initialization
 	private void Start () {
-		gameObject.hideFlags = HideFlags.NotEditable;
+		gameObject.hideFlags = HideFlags.None;
 	}
 }
