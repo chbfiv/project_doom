@@ -95,21 +95,8 @@ public class MazeGenerator : MonoBehaviour {
 			CreateGameTile (ray);
 			
 			PushGameDirections(testRayStack, ray.origin);
-			
-			while (testRayStack.Count > 0) {
-				GameRay testRay = testRayStack.Pop();
-				
-				RaycastHit info;
-				if (!Physics.Raycast (testRay.origin, testRay.dir, out info, gameStep)) {
-					Debug.DrawRay(testRay.origin, testRay.dir * gameStep, Color.green, stepDelay * 10f);
-					//					Debug.Log("miss: " + origin + ", " + (dir * step));
-					rayStack.Push(new GameRay(testRay.origin + (testRay.dir * gameStep), testRay.dir));
-					return true;
-				} else {
-					//					Debug.LogWarning("hit: " + info.collider.name + ", " + origin + ", " + (dir * step));
-					Debug.DrawRay(testRay.origin, testRay.dir * gameStep, Color.red, stepDelay * 10f);
-				}
-			}
+
+			ProcessGameStack(rayStack, testRayStack, ray);
 			
 			if (Application.isPlaying)
 				yield return new WaitForSeconds(stepDelay);
@@ -119,6 +106,25 @@ public class MazeGenerator : MonoBehaviour {
 		    
 	    Debug.Log (gameObject.name + " build game complete.");
 	}
+
+	private void ProcessGameStack(Stack<GameRay> rayStack, Stack<GameRay> testRayStack, GameRay ray) {
+		
+		Transform mazeXform = mazeRoot.transform;
+		Transform gameXform = gameRoot.transform;
+    
+   		while (testRayStack.Count > 0) {
+			GameRay testRay = testRayStack.Pop();
+			
+			string name = BuildTileName ("tile", testRay.origin + (testRay.dir * gameStep));
+
+			bool has = (mazeXform.FindChild (name) != null) || (gameXform.FindChild (name) != null);
+
+			if (!has)
+				rayStack.Push(new GameRay(testRay.origin + (testRay.dir * gameStep), testRay.dir));
+		}
+	}
+
+
 
 	private void CreateGameTile(GameRay ray) {
 		string left = BuildTileName ("tile", ray.origin + (Vector3.left * gameStep));
