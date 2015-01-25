@@ -21,8 +21,11 @@ public class PlayerAI : MonoBehaviour {
 	//The waypoint we are currently moving towards
 	private int currentWaypoint = 0;
 
+	private ControlService _ctrlService;
+
 	// Use this for initialization
 	void Start () {
+		_ctrlService = Injector.Get<ControlService> ();
 		seeker = GetComponent<Seeker> ();
 		controller = GetComponent<CharacterController> ();
 		seeker.StartPath (transform.position, target.position, OnPathCompelte);
